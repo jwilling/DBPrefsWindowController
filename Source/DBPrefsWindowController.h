@@ -4,7 +4,7 @@
 //  Created by Dave Batton
 //  http://www.Mere-Mortal-Software.com/blog/
 //
-//  Updated by David Keegan
+//  Updated by David Keegan and Jonathan Willing
 //  https://github.com/kgn/DBPrefsWindowController
 //
 //  Copyright 2007. Some rights reserved.
