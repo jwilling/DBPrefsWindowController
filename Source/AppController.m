@@ -10,10 +10,8 @@
 + (void)initialize{
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     NSDictionary *appDefaults = [NSDictionary dictionaryWithObjectsAndKeys:
-                                 @"YES", @"openAtStartup",
-                                 @"YES", @"fade",
-                                 @"YES", @"shiftSlowsAnimation",
-                                 nil];
+                                 [NSNumber numberWithBool:YES], @"openAtStartup",
+                                 [NSNumber numberWithBool:YES], @"fade",nil];
     [defaults registerDefaults:appDefaults];
 }
 
@@ -21,10 +19,6 @@
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
     [defaults addObserver:self
                forKeyPath:@"fade"
-                  options:NSKeyValueObservingOptionOld
-                  context:NULL];
-    [defaults addObserver:self
-               forKeyPath:@"shiftSlowsAnimation"
                   options:NSKeyValueObservingOptionOld
                   context:NULL];
 	if([[NSUserDefaults standardUserDefaults] boolForKey:@"openAtStartup"]){
@@ -44,7 +38,6 @@
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context{
 	[[AppPrefsWindowController sharedPrefsWindowController] setCrossFade:[[NSUserDefaults standardUserDefaults] boolForKey:@"fade"]];
-	[[AppPrefsWindowController sharedPrefsWindowController] setShiftSlowsAnimation:[[NSUserDefaults standardUserDefaults] boolForKey:@"shiftSlowsAnimation"]];
 }
 
 @end
