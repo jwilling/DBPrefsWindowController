@@ -205,24 +205,32 @@
         // Remove any others.
         NSView *reallyOldView = nil;
         while((reallyOldView = [subviewsEnum nextObject]) != nil){
-            [reallyOldView removeFromSuperviewWithoutNeedingDisplay];
+            [reallyOldView removeFromSuperview];
         }
     }
 
     if(![newView isEqualTo:oldView]){
+        BOOL slowAnimation = ([self shiftSlowsAnimation]
+                              && [[[self window] currentEvent] modifierFlags] & NSShiftKeyMask);
+        BOOL shouldAnimate = (animate && [self crossFade]);
         NSRect frame = [newView bounds];
         frame.origin.y = NSHeight([self.contentSubview frame]) - NSHeight([newView bounds]);
         [newView setFrame:frame];
+        [newView setAlphaValue:0.f];
         [self.contentSubview addSubview:newView];
+        
+        [NSAnimationContext beginGrouping];
+        [[NSAnimationContext currentContext] setDuration:shouldAnimate ? (slowAnimation ? 1.25f : 0.25f) : 0.f];
+        [[NSAnimationContext currentContext] setCompletionHandler:^{
+            [self animationDidEnd:nil];
+        }];
+        
+        [newView.animator setAlphaValue:1.f];
+        [oldView.animator setAlphaValue:0.f];
         [[self window] setInitialFirstResponder:newView];
-
-        if(animate && [self crossFade]){
-            [self crossFadeView:oldView withView:newView];
-        }else{
-            [oldView removeFromSuperviewWithoutNeedingDisplay];
-            [newView setHidden:NO];
-            [[self window] setFrame:[self frameForView:newView] display:YES animate:animate];
-        }
+        
+        [self.window.animator setFrame:[self frameForView:newView] display:YES];
+         [NSAnimationContext endGrouping];
 
         [[self window] setTitle:[[self.toolbarItems objectForKey:identifier] label]];
     }
@@ -236,45 +244,6 @@
 
 #pragma mark -
 #pragma mark Cross-Fading Methods
-
-- (void)crossFadeView:(NSView *)oldView withView:(NSView *)newView{
-    [self.viewAnimation stopAnimation];
-
-    if([self shiftSlowsAnimation] && [[[self window] currentEvent] modifierFlags] & NSShiftKeyMask){
-        [self.viewAnimation setDuration:1.25];
-    }else{
-        [self.viewAnimation setDuration:0.25];
-    }
-
-    NSDictionary *fadeOutDictionary = 
-    [NSDictionary dictionaryWithObjectsAndKeys:
-     oldView, NSViewAnimationTargetKey,
-     NSViewAnimationFadeOutEffect, NSViewAnimationEffectKey,
-     nil];
-
-    NSDictionary *fadeInDictionary = 
-    [NSDictionary dictionaryWithObjectsAndKeys:
-     newView, NSViewAnimationTargetKey,
-     NSViewAnimationFadeInEffect, NSViewAnimationEffectKey,
-     nil];
-
-    NSDictionary *resizeDictionary = 
-    [NSDictionary dictionaryWithObjectsAndKeys:
-     [self window], NSViewAnimationTargetKey,
-     [NSValue valueWithRect:[[self window] frame]], NSViewAnimationStartFrameKey,
-     [NSValue valueWithRect:[self frameForView:newView]], NSViewAnimationEndFrameKey,
-     nil];
-
-    NSArray *animationArray = 
-    [NSArray arrayWithObjects:
-     fadeOutDictionary,
-     fadeInDictionary,
-     resizeDictionary,
-     nil];
-
-    [self.viewAnimation setViewAnimations:animationArray];
-    [self.viewAnimation startAnimation];
-}
 
 - (void)animationDidEnd:(NSAnimation *)animation{
     NSView *subview;
@@ -290,7 +259,7 @@
     // if the user does a lot of fast clicking, we might have
     // more than one to remove.
     while((subview = [subviewsEnum nextObject]) != nil){
-        [subview removeFromSuperviewWithoutNeedingDisplay];
+        [subview removeFromSuperview];
     }
 
     // This is a work-around that prevents the first
